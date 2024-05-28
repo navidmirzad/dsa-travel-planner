@@ -1,254 +1,233 @@
 "use strict";
 
-document.addEventListener("DOMContentLoaded", start);
+let map;
+let markers = [];
+let polylines = [];
 
-let graphData = null; // Global variable to store graph data
+class PriorityQueue {
+  constructor() {
+    this.items = [];
+  }
 
-function start() {
-  console.log("JavaScript is running!");
+  enqueue(item) {
+    this.items.push(item);
+    this.items.sort((a, b) => a.priority - b.priority);
+  }
+
+  dequeue() {
+    if (this.isEmpty()) {
+      return null;
+    }
+    return this.items.shift();
+  }
+
+  size() {
+    return this.items.length;
+  }
+
+  isEmpty() {
+    return this.items.length === 0;
+  }
 }
 
 function generateGraph() {
-  const numNodes = parseInt(document.getElementById("numNodes").value);
-  graphData = createDirectedGraph(numNodes);
-  visualizeGraph(graphData);
-}
-
-function createDirectedGraph(numNodes) {
-  let nodes = [];
-  let links = [];
-  for (let i = 0; i < numNodes; i++) {
-    nodes.push({ id: i });
-  }
-  for (let i = 0; i < numNodes; i++) {
-    let target = Math.floor(Math.random() * numNodes);
-    if (target !== i) {
-      links.push({ source: i, target: target });
-    }
-  }
-  return { nodes: nodes, links: links };
-}
-
-function visualizeGraph(
-  graphData,
-  prev = null,
-  startNode = null,
-  endNode = null
-) {
-  const width = 1000;
-  const height = 800;
-  const svg = d3
-    .select("#graph")
-    .html("")
-    .append("svg")
-    .attr("width", width)
-    .attr("height", height);
-
-  const link = svg
-    .append("g")
-    .selectAll("line")
-    .data(graphData.links)
-    .enter()
-    .append("line")
-    .attr("stroke", "#999")
-    .attr("stroke-width", 2);
-
-  const node = svg
-    .append("g")
-    .selectAll("circle")
-    .data(graphData.nodes)
-    .enter()
-    .append("circle")
-    .attr("r", 8)
-    .attr("fill", (d) =>
-      d.id === startNode ? "green" : d.id === endNode ? "red" : "#69b3a2"
-    );
-
-  const labels = svg
-    .append("g")
-    .selectAll("text")
-    .data(graphData.nodes)
-    .enter()
-    .append("text")
-    .attr("dy", -10)
-    .attr("dx", -10)
-    .attr("font-size", "10px")
-    .attr("fill", "#000")
-    .text((d) => d.id);
-
-  const simulation = d3
-    .forceSimulation(graphData.nodes)
-    .force(
-      "link",
-      d3
-        .forceLink(graphData.links)
-        .id((d) => d.id)
-        .distance(150)
-    )
-    .force("charge", d3.forceManyBody().strength(-500))
-    .force("center", d3.forceCenter(width / 2, height / 2))
-    .on("tick", ticked);
-
-  function ticked() {
-    link
-      .attr("x1", (d) => d.source.x)
-      .attr("y1", (d) => d.source.y)
-      .attr("x2", (d) => d.target.x)
-      .attr("y2", (d) => d.target.y);
-
-    node.attr("cx", (d) => d.x).attr("cy", (d) => d.y);
-
-    labels.attr("x", (d) => d.x).attr("y", (d) => d.y);
-
-    if (prev) {
-      highlightPath(prev, endNode);
-    }
-  }
-
-  function highlightPath(prev, endNode) {
-    let currentNode = endNode;
-    const pathNodes = new Set();
-    const pathLinks = [];
-
-    while (currentNode !== null && prev[currentNode] !== null) {
-      let nextNode = prev[currentNode];
-      pathNodes.add(currentNode);
-      pathNodes.add(nextNode);
-      pathLinks.push({ source: nextNode, target: currentNode });
-      currentNode = nextNode;
-    }
-
-    svg
-      .append("g")
-      .selectAll("line")
-      .data(pathLinks)
-      .enter()
-      .append("line")
-      .attr("x1", (d) => graphData.nodes[d.source].x)
-      .attr("y1", (d) => graphData.nodes[d.source].y)
-      .attr("x2", (d) => graphData.nodes[d.target].x)
-      .attr("y2", (d) => graphData.nodes[d.target].y)
-      .attr("stroke", "blue")
-      .attr("stroke-width", 4);
-
-    svg
-      .append("g")
-      .selectAll("circle")
-      .data(Array.from(pathNodes).map((id) => graphData.nodes[id]))
-      .enter()
-      .append("circle")
-      .attr("cx", (d) => d.x)
-      .attr("cy", (d) => d.y)
-      .attr("r", 8)
-      .attr("fill", "orange");
-
-    svg
-      .append("g")
-      .selectAll("text")
-      .data(Array.from(pathNodes).map((id) => graphData.nodes[id]))
-      .enter()
-      .append("text")
-      .attr("x", (d) => d.x)
-      .attr("y", (d) => d.y)
-      .attr("dy", -10)
-      .attr("dx", -10)
-      .attr("font-size", "10px")
-      .attr("fill", "black")
-      .text((d) => d.id);
-  }
-}
-
-function findShortestPath() {
-  const startNode = parseInt(document.getElementById("startNode").value);
-  const endNode = parseInt(document.getElementById("endNode").value);
-  if (!graphData) {
-    alert("Please generate the graph first.");
+  const nodeCount = parseInt(document.getElementById("nodeCount").value);
+  if (isNaN(nodeCount) || nodeCount <= 0) {
+    alert("Please enter a valid number of nodes.");
     return;
   }
-  const { distances, prev } = dijkstra(graphData, startNode);
-  visualizeGraph(graphData, prev, startNode, endNode);
+
+  const graph = createRandomGraph(nodeCount);
+  const positions = generateRandomPositions(nodeCount);
+  displayGraph(graph);
+  visualizeGraphOnMap(graph, 0, nodeCount - 1); // Passing start and end nodes
+
+  const startNode = 0;
+  const endNode = nodeCount - 1;
+  const fastestRoute = findFastestRoute(graph, startNode, endNode, positions);
+  console.log("Fastest Route:", fastestRoute);
 }
 
-function generatePDF() {
-  const { jsPDF } = window.jspdf;
-  const doc = new jsPDF();
-  doc.text("Travel Planner Using Graphs", 20, 10);
-  doc.text(
-    "This project visualizes a travel planner using graphs. It generates a directed graph with a given number of nodes, and implements Dijkstra's algorithm to find the shortest path between two nodes.",
-    20,
-    20
-  );
-  const stepsText = document.getElementById("steps").innerText;
-  doc.text(stepsText, 20, 40);
-  doc.save("travel_planner.pdf");
-}
+function createRandomGraph(nodeCount) {
+  const graph = {};
 
-function dijkstra(graph, startNode) {
-  let distances = {};
-  let prev = {};
-  let pq = new PriorityQueue();
-  let steps = 0;
+  for (let i = 0; i < nodeCount; i++) {
+    graph[i] = [];
+  }
 
-  distances[startNode] = 0;
-  pq.enqueue(startNode, 0);
-
-  graph.nodes.forEach((node) => {
-    if (node.id !== startNode) {
-      distances[node.id] = Infinity;
+  for (let i = 0; i < nodeCount; i++) {
+    const edges = Math.floor(Math.random() * nodeCount); // Random number of edges for node i
+    for (let j = 0; j < edges; j++) {
+      const targetNode = Math.floor(Math.random() * nodeCount);
+      if (
+        !graph[i].some((edge) => edge.target === targetNode) &&
+        i !== targetNode
+      ) {
+        const distance = Math.floor(Math.random() * 100) + 1; // Random distance between 1 and 100
+        graph[i].push({ target: targetNode, distance: distance });
+      }
     }
-    prev[node.id] = null;
-  });
+  }
 
-  while (!pq.isEmpty()) {
-    let minNode = pq.dequeue();
-    let currentNode = minNode.element;
-    steps++;
+  return graph;
+}
 
-    graph.links.forEach((link) => {
-      if (link.source.id === currentNode) {
-        let alt = distances[currentNode] + 1; // Each edge has weight 1
-        if (alt < distances[link.target.id]) {
-          distances[link.target.id] = alt;
-          prev[link.target.id] = currentNode;
-          pq.enqueue(link.target.id, distances[link.target.id]);
-        }
+function displayGraph(graph) {
+  const graphOutput = document.getElementById("graphOutput");
+  graphOutput.innerHTML = "";
+
+  for (let node in graph) {
+    const edges = graph[node]
+      .map((edge) => `Node ${edge.target} (distance: ${edge.distance})`)
+      .join(", ");
+    const nodeElement = document.createElement("div");
+    nodeElement.innerText = `Node ${node} -> [${edges}]`;
+    graphOutput.appendChild(nodeElement);
+  }
+}
+
+function visualizeGraphOnMap(graph, startNode, endNode) {
+  if (!map) {
+    map = L.map("map").setView([51.505, -0.09], 13); // Default to London
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+      attribution:
+        '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+    }).addTo(map);
+  }
+
+  clearMap();
+
+  const nodeCount = Object.keys(graph).length;
+  const positions = generateRandomPositions(nodeCount);
+
+  for (let node in positions) {
+    const { lat, lng } = positions[node];
+    const marker = L.marker([lat, lng]).addTo(map);
+    marker.bindPopup(`Node ${node}`).openPopup();
+    markers.push(marker);
+
+    if (node == startNode) {
+      marker.setIcon(
+        L.icon({
+          iconUrl: "https://leafletjs.com/examples/custom-icons/leaf-green.png",
+          iconSize: [38, 95],
+          iconAnchor: [22, 94],
+          popupAnchor: [-3, -76],
+        })
+      );
+    } else if (node == endNode) {
+      marker.setIcon(
+        L.icon({
+          iconUrl: "https://leafletjs.com/examples/custom-icons/leaf-red.png",
+          iconSize: [38, 95],
+          iconAnchor: [22, 94],
+          popupAnchor: [-3, -76],
+        })
+      );
+    }
+  }
+
+  for (let node in graph) {
+    graph[node].forEach((edge) => {
+      const { target, distance } = edge;
+      const latlngs = [
+        [positions[node].lat, positions[node].lng],
+        [positions[target].lat, positions[target].lng],
+      ];
+      const polyline = L.polyline(latlngs, { color: "blue" }).addTo(map);
+      polyline.bindPopup(`Distance: ${distance}`).openPopup();
+      polylines.push(polyline);
+
+      // Calculate midpoint of the polyline segment
+      const midPoint = [
+        (latlngs[0][0] + latlngs[1][0]) / 2,
+        (latlngs[0][1] + latlngs[1][1]) / 2,
+      ];
+
+      // Add arrow marker at the midpoint
+      const arrowMarker = L.marker(midPoint, {
+        icon: L.divIcon({
+          className: "arrow-icon",
+          html: '<i class="fas fa-arrow-right"></i>',
+          iconSize: [20, 20],
+        }),
+      }).addTo(map);
+    });
+  }
+}
+
+function generateRandomPositions(nodeCount) {
+  const positions = {};
+  const latRange = [51.48, 51.52]; // Latitude range for central London
+  const lngRange = [-0.1, -0.06]; // Longitude range for central London
+
+  for (let i = 0; i < nodeCount; i++) {
+    const lat = Math.random() * (latRange[1] - latRange[0]) + latRange[0];
+    const lng = Math.random() * (lngRange[1] - lngRange[0]) + lngRange[0];
+    positions[i] = { lat, lng };
+  }
+
+  return positions;
+}
+
+function clearMap() {
+  markers.forEach((marker) => map.removeLayer(marker));
+  polylines.forEach((polyline) => map.removeLayer(polyline));
+  markers = [];
+  polylines = [];
+}
+
+function findFastestRoute(graph, startNode, endNode, positions) {
+  const heuristic = (node) => {
+    // Simple heuristic: straight-line distance between nodes
+    const { lat: startLat, lng: startLng } = positions[startNode];
+    const { lat: endLat, lng: endLng } = positions[endNode];
+    const dx = endLat - startLat;
+    const dy = endLng - startLng;
+    return Math.sqrt(dx * dx + dy * dy);
+  };
+
+  const distanceFromStart = {};
+  const cameFrom = {}; // To keep track of previous node
+  const priorityQueue = new PriorityQueue();
+
+  for (let node in graph) {
+    distanceFromStart[node] = Infinity;
+  }
+  distanceFromStart[startNode] = 0;
+
+  priorityQueue.enqueue({ node: startNode, priority: heuristic(startNode) });
+
+  while (!priorityQueue.isEmpty()) {
+    const { node: currentNode } = priorityQueue.dequeue();
+
+    if (currentNode === endNode) {
+      return reconstructPath(startNode, endNode, cameFrom);
+    }
+
+    graph[currentNode].forEach(({ target: nextNode, distance }) => {
+      const newDistance = distanceFromStart[currentNode] + distance;
+
+      if (newDistance < distanceFromStart[nextNode]) {
+        distanceFromStart[nextNode] = newDistance;
+        cameFrom[nextNode] = currentNode; // Update cameFrom
+        const priority = newDistance + heuristic(nextNode);
+        priorityQueue.enqueue({ node: nextNode, priority });
       }
     });
   }
 
-  document.getElementById("steps").innerText = `Steps taken: ${steps}`;
-  return { distances, prev };
+  return null; // No path found
 }
 
-class PriorityQueue {
-  constructor() {
-    this.collection = [];
+function reconstructPath(startNode, endNode, cameFrom) {
+  // Reconstruct path from startNode to endNode
+  const path = [];
+  let currentNode = endNode;
+  while (currentNode !== startNode) {
+    path.unshift(currentNode);
+    currentNode = cameFrom[currentNode];
   }
-
-  enqueue(element, priority) {
-    let newNode = { element, priority };
-    if (this.isEmpty()) {
-      this.collection.push(newNode);
-    } else {
-      let added = false;
-      for (let i = 0; i < this.collection.length; i++) {
-        if (newNode.priority < this.collection[i].priority) {
-          this.collection.splice(i, 0, newNode);
-          added = true;
-          break;
-        }
-      }
-      if (!added) {
-        this.collection.push(newNode);
-      }
-    }
-  }
-
-  dequeue() {
-    return this.collection.shift();
-  }
-
-  isEmpty() {
-    return this.collection.length === 0;
-  }
+  path.unshift(startNode);
+  return path;
 }
