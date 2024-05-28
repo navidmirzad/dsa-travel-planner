@@ -1,5 +1,95 @@
 "use strict";
 
+/* class NodeDistancePair {
+  constructor(node, distFromStart, path) {
+    this.node = node;
+    this.distFromStart = distFromStart;
+    this.path = path;
+  }
+}
+
+class Queue {
+  constructor() {
+    this.items = [];
+  }
+
+  enqueue(item) {
+    this.items.push(item);
+  }
+
+  dequeue() {
+    if (this.isEmpty()) {
+      return null;
+    }
+    return this.items.shift();
+  }
+
+  size() {
+    return this.items.length;
+  }
+
+  isEmpty() {
+    return this.items.length === 0;
+  }
+}
+
+const buildGraph = (edges) => {
+  const graph = {};
+
+  edges.forEach((edge) => {
+    const [start, end] = edge;
+
+    if (!graph[start]) graph[start] = [];
+
+    graph[start].push(end);
+  });
+
+  return graph;
+};
+
+const getShortestPath = (edges, startNode, endNode) => {
+  const graph = buildGraph(edges);
+
+  const queue = new Queue();
+  const initialNodePair = new NodeDistancePair(startNode, 0, [startNode]);
+  queue.enqueue(initialNodePair);
+
+  while (queue.size() > 0) {
+    const nodeDistancePair = queue.dequeue();
+    const { node, distFromStart, path } = nodeDistancePair;
+
+    if (node === endNode) return path;
+
+    const children = graph[node];
+    if (!children) continue;
+
+    children.forEach((child) => {
+      const childPath = [...path, child];
+      const childDistancePair = new NodeDistancePair(
+        child,
+        distFromStart + 1,
+        childPath
+      );
+      queue.enqueue(childDistancePair);
+    });
+  }
+
+  return null; // If no path found
+};
+
+const edges = [
+  [0, 1],
+  [0, 2],
+  [1, 3],
+  [2, 3],
+  [3, 4],
+  [4, 5],
+];
+const startNode = 0;
+const endNode = 5;
+console.log(getShortestPath(edges, startNode, endNode));
+ */
+
 let map;
 let markers = [];
 let polylines = [];
@@ -137,21 +227,6 @@ function visualizeGraphOnMap(graph, startNode, endNode) {
       const polyline = L.polyline(latlngs, { color: "blue" }).addTo(map);
       polyline.bindPopup(`Distance: ${distance}`).openPopup();
       polylines.push(polyline);
-
-      // Calculate midpoint of the polyline segment
-      const midPoint = [
-        (latlngs[0][0] + latlngs[1][0]) / 2,
-        (latlngs[0][1] + latlngs[1][1]) / 2,
-      ];
-
-      // Add arrow marker at the midpoint
-      const arrowMarker = L.marker(midPoint, {
-        icon: L.divIcon({
-          className: "arrow-icon",
-          html: '<i class="fas fa-arrow-right"></i>',
-          iconSize: [20, 20],
-        }),
-      }).addTo(map);
     });
   }
 }
