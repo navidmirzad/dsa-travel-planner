@@ -1,95 +1,5 @@
 "use strict";
 
-/* class NodeDistancePair {
-  constructor(node, distFromStart, path) {
-    this.node = node;
-    this.distFromStart = distFromStart;
-    this.path = path;
-  }
-}
-
-class Queue {
-  constructor() {
-    this.items = [];
-  }
-
-  enqueue(item) {
-    this.items.push(item);
-  }
-
-  dequeue() {
-    if (this.isEmpty()) {
-      return null;
-    }
-    return this.items.shift();
-  }
-
-  size() {
-    return this.items.length;
-  }
-
-  isEmpty() {
-    return this.items.length === 0;
-  }
-}
-
-const buildGraph = (edges) => {
-  const graph = {};
-
-  edges.forEach((edge) => {
-    const [start, end] = edge;
-
-    if (!graph[start]) graph[start] = [];
-
-    graph[start].push(end);
-  });
-
-  return graph;
-};
-
-const getShortestPath = (edges, startNode, endNode) => {
-  const graph = buildGraph(edges);
-
-  const queue = new Queue();
-  const initialNodePair = new NodeDistancePair(startNode, 0, [startNode]);
-  queue.enqueue(initialNodePair);
-
-  while (queue.size() > 0) {
-    const nodeDistancePair = queue.dequeue();
-    const { node, distFromStart, path } = nodeDistancePair;
-
-    if (node === endNode) return path;
-
-    const children = graph[node];
-    if (!children) continue;
-
-    children.forEach((child) => {
-      const childPath = [...path, child];
-      const childDistancePair = new NodeDistancePair(
-        child,
-        distFromStart + 1,
-        childPath
-      );
-      queue.enqueue(childDistancePair);
-    });
-  }
-
-  return null; // If no path found
-};
-
-const edges = [
-  [0, 1],
-  [0, 2],
-  [1, 3],
-  [2, 3],
-  [3, 4],
-  [4, 5],
-];
-const startNode = 0;
-const endNode = 5;
-console.log(getShortestPath(edges, startNode, endNode));
- */
-
 let map;
 let markers = [];
 let polylines = [];
@@ -259,6 +169,7 @@ function findFastestRoute(graph, startNode, endNode, positions) {
     const { lat: endLat, lng: endLng } = positions[endNode];
     const dx = endLat - startLat;
     const dy = endLng - startLng;
+    // x1, y1, x2, y2
     return Math.sqrt(dx * dx + dy * dy);
   };
 
