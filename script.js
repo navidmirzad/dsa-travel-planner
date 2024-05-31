@@ -44,7 +44,7 @@ function generateGraph() {
 
   const startNode = 0;
   const endNode = nodeCount - 1;
-  const fastestRoute = findFastestRoute(graph, startNode, endNode, positions);
+  const fastestRoute = findFastestRoute(graph, startNode, endNode);
   console.log("Fastest Route:", fastestRoute);
 }
 
@@ -162,17 +162,7 @@ function clearMap() {
   polylines = [];
 }
 
-function findFastestRoute(graph, startNode, endNode, positions) {
-  const heuristic = (node) => {
-    // Simple heuristic: straight-line distance between nodes
-    const { lat: startLat, lng: startLng } = positions[startNode];
-    const { lat: endLat, lng: endLng } = positions[endNode];
-    const dx = endLat - startLat;
-    const dy = endLng - startLng;
-    // x1, y1, x2, y2
-    return Math.sqrt(dx * dx + dy * dy);
-  };
-
+function findFastestRoute(graph, startNode, endNode) {
   const distanceFromStart = {};
   const cameFrom = {}; // To keep track of previous node
   const priorityQueue = new PriorityQueue();
@@ -182,7 +172,7 @@ function findFastestRoute(graph, startNode, endNode, positions) {
   }
   distanceFromStart[startNode] = 0;
 
-  priorityQueue.enqueue({ node: startNode, priority: heuristic(startNode) });
+  priorityQueue.enqueue({ node: startNode, priority: 0 });
 
   while (!priorityQueue.isEmpty()) {
     const { node: currentNode } = priorityQueue.dequeue();
@@ -197,8 +187,7 @@ function findFastestRoute(graph, startNode, endNode, positions) {
       if (newDistance < distanceFromStart[nextNode]) {
         distanceFromStart[nextNode] = newDistance;
         cameFrom[nextNode] = currentNode; // Update cameFrom
-        const priority = newDistance + heuristic(nextNode);
-        priorityQueue.enqueue({ node: nextNode, priority });
+        priorityQueue.enqueue({ node: nextNode, priority: newDistance });
       }
     });
   }
