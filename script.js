@@ -40,12 +40,16 @@ function generateGraph() {
   const graph = createRandomGraph(nodeCount);
   const positions = generateRandomPositions(nodeCount);
   displayGraph(graph);
-  visualizeGraphOnMap(graph, 0, nodeCount - 1); // Passing start and end nodes
+  visualizeGraphOnMap(graph, 0, nodeCount - 1, positions); // Passing positions to visualize routes
 
   const startNode = 0;
   const endNode = nodeCount - 1;
   const fastestRoute = findFastestRoute(graph, startNode, endNode, positions);
-  console.log("Fastest Route:", fastestRoute);
+  console.log("A* ", fastestRoute);
+  const dfsRoute = dfs(graph, startNode, endNode);
+  console.log("DFS ", dfsRoute);
+
+  visualizeRoutesOnMap(positions, fastestRoute, dfsRoute); // Visualize both routes
 }
 
 function createRandomGraph(nodeCount) {
@@ -86,7 +90,7 @@ function displayGraph(graph) {
   }
 }
 
-function visualizeGraphOnMap(graph, startNode, endNode) {
+function visualizeGraphOnMap(graph, startNode, endNode, positions) {
   if (!map) {
     map = L.map("map").setView([51.505, -0.09], 13); // Default to London
     L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
@@ -96,9 +100,6 @@ function visualizeGraphOnMap(graph, startNode, endNode) {
   }
 
   clearMap();
-
-  const nodeCount = Object.keys(graph).length;
-  const positions = generateRandomPositions(nodeCount);
 
   for (let node in positions) {
     const { lat, lng } = positions[node];
@@ -134,7 +135,7 @@ function visualizeGraphOnMap(graph, startNode, endNode) {
         [positions[node].lat, positions[node].lng],
         [positions[target].lat, positions[target].lng],
       ];
-      const polyline = L.polyline(latlngs, { color: "blue" }).addTo(map);
+      const polyline = L.polyline(latlngs, { color: "gray" }).addTo(map); // Use gray for graph edges
       polyline.bindPopup(`Distance: ${distance}`).openPopup();
       polylines.push(polyline);
     });
@@ -162,6 +163,7 @@ function clearMap() {
   polylines = [];
 }
 
+// A* Algorithm
 function findFastestRoute(graph, startNode, endNode, positions) {
   const heuristic = (node) => {
     // Simple heuristic: straight-line distance between nodes
@@ -169,7 +171,6 @@ function findFastestRoute(graph, startNode, endNode, positions) {
     const { lat: endLat, lng: endLng } = positions[endNode];
     const dx = endLat - startLat;
     const dy = endLng - startLng;
-    // x1, y1, x2, y2
     return Math.sqrt(dx * dx + dy * dy);
   };
 
@@ -216,4 +217,68 @@ function reconstructPath(startNode, endNode, cameFrom) {
   }
   path.unshift(startNode);
   return path;
+}
+
+// DFS Algorithm
+function dfs(graph, startNode, endNode) {
+  const visited = [];
+  const stack = [startNode];
+  const cameFrom = {};
+
+  while (stack.length > 0) {
+    const currentNode = stack.pop();
+
+    if (!visited.includes(currentNode)) {
+      visited.push(currentNode);
+
+      if (currentNode === endNode) {
+        return reconstructPath(startNode, endNode, cameFrom);
+      }
+
+      graph[currentNode].forEach((edge) => {
+        if (!visited.includes(edge.target)) {
+          stack.push(edge.target);
+          cameFrom[edge.target] = currentNode;
+        }
+      });
+    }
+  }
+
+  return visited;
+}
+
+function visualizeRoutesOnMap(positions, fastestRoute, dfsRoute) {
+  // Clear previous routes
+  polylines.forEach((polyline) => map.removeLayer(polyline));
+  polylines = [];
+
+  // Plot A* route in blue
+  if (fastestRoute) {
+    for (let i = 0; i < fastestRoute.length - 1; i++) {
+      const start = positions[fastestRoute[i]];
+      const end = positions[fastestRoute[i + 1]];
+      const latlngs = [
+        [start.lat, start.lng],
+        [end.lat, end.lng],
+      ];
+      const polyline = L.polyline(latlngs, { color: "blue", weight: 5 }).addTo(
+        map
+      );
+      polylines.push(polyline);
+    }
+  }
+
+  // Plot DFS route in red
+  if (dfsRoute) {
+    for (let i = 0; i < dfsRoute.length - 1; i++) {
+      const start = positions[dfsRoute[i]];
+      const end = positions[dfsRoute[i + 1]];
+      const latlngs = [
+        [start.lat, start.lng],
+        [end.lat, end.lng],
+      ];
+      const polyline = L.polyline(latlngs, { color: "red" }).addTo(map);
+      polylines.push(polyline);
+    }
+  }
 }
