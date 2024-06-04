@@ -248,7 +248,6 @@ function dfs(graph, startNode, endNode) {
 }
 
 function visualizeRoutesOnMap(positions, fastestRoute, dfsRoute) {
-  // Clear previous routes
   polylines.forEach((polyline) => map.removeLayer(polyline));
   polylines = [];
 
@@ -268,7 +267,7 @@ function visualizeRoutesOnMap(positions, fastestRoute, dfsRoute) {
     }
   }
 
-  // Plot DFS route in red
+  // Plot DFS red
   if (dfsRoute) {
     for (let i = 0; i < dfsRoute.length - 1; i++) {
       const start = positions[dfsRoute[i]];
