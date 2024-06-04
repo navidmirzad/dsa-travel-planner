@@ -80,6 +80,15 @@ function generateGraph() {
     "Green route"
   );
 
+  const djikstraRoute = Djikstra(graph, startNode, endNode);
+  console.log(
+    "Djikstra ",
+    djikstraRoute,
+    "total Distance:",
+    calculateTotalDistance(graph, djikstraRoute),
+    "Purple route"
+  )
+
   visualizeRoutesOnMap(positions, fastestRoute, dfsRoute, bfsRoute); // Visualize both routes
 }
 
@@ -307,7 +316,40 @@ function bfs(graph, startNode, endNode) {
   return null;
 }
 
-function visualizeRoutesOnMap(positions, fastestRoute, dfsRoute, bfsRoute) {
+function Djikstra (graph, startNode, endNode){
+  const distanceFromStart = {};
+  const cameFrom = {}; // To keep track of previous node
+  const priorityQueue = new PriorityQueue();
+
+  for (let node in graph) {
+    distanceFromStart[node] = Infinity;
+  }
+  distanceFromStart[startNode] = 0;
+
+  priorityQueue.enqueue({ node: startNode, priority: 0 });
+
+  while (!priorityQueue.isEmpty()) {
+    const { node: currentNode } = priorityQueue.dequeue();
+
+    if (currentNode === endNode) {
+      return reconstructPath(startNode, endNode, cameFrom);
+    }
+
+    graph[currentNode].forEach(({ target: nextNode, distance }) => {
+      const newDistance = distanceFromStart[currentNode] + distance;
+
+      if (newDistance < distanceFromStart[nextNode]) {
+        distanceFromStart[nextNode] = newDistance;
+        cameFrom[nextNode] = currentNode; // Update cameFrom
+        priorityQueue.enqueue({ node: nextNode, priority: newDistance });
+      }
+    });
+  }
+
+  return null;
+}
+
+function visualizeRoutesOnMap(positions, fastestRoute, dfsRoute, bfsRoute, djikstraRoute) {
   polylines.forEach((polyline) => map.removeLayer(polyline));
   polylines = [];
 
@@ -354,4 +396,18 @@ function visualizeRoutesOnMap(positions, fastestRoute, dfsRoute, bfsRoute) {
       polylines.push(polyline);
     }
   }
+
+  if (djikstraRoute){
+    for (let i = 0; i < djikstraRoute.length - 1; i++) {
+      const start = positions[djikstraRoute[i]];
+      const end = positions[djikstraRoute[i + 1]];
+      const latlngs = [
+        [start.lat, start.lng],
+        [end.lat, end.lng],
+      ];
+      const polyline = L.polyline(latlngs, { color: "purple" }).addTo(map);
+      polylines.push(polyline);
+    }
+  }
 }
+
