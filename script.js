@@ -30,6 +30,17 @@ class PriorityQueue {
   }
 }
 
+function calculateTotalDistance(graph, route) {
+  let totalDistance = 0;
+  for (let i = 0; i < route.length - 1; i++) {
+    const currentNode = route[i];
+    const nextNode = route[i + 1];
+    const edge = graph[currentNode].find((edge) => edge.target === nextNode);
+    totalDistance += edge.distance;
+  }
+  return totalDistance;
+}
+
 function generateGraph() {
   const nodeCount = parseInt(document.getElementById("nodeCount").value);
   if (isNaN(nodeCount) || nodeCount <= 0) {
@@ -45,11 +56,31 @@ function generateGraph() {
   const startNode = 0;
   const endNode = nodeCount - 1;
   const fastestRoute = findFastestRoute(graph, startNode, endNode, positions);
-  console.log("A* ", fastestRoute);
+  console.log(
+    "A* ",
+    fastestRoute,
+    "Total Distance:",
+    calculateTotalDistance(graph, fastestRoute),
+    "Blue route"
+  );
   const dfsRoute = dfs(graph, startNode, endNode);
-  console.log("DFS ", dfsRoute);
+  console.log(
+    "DFS ",
+    dfsRoute,
+    "Total Distance:",
+    calculateTotalDistance(graph, dfsRoute),
+    "Red route"
+  );
+  const bfsRoute = bfs(graph, startNode, endNode);
+  console.log(
+    "BFS ",
+    bfsRoute,
+    "Total Distance:",
+    calculateTotalDistance(graph, bfsRoute),
+    "Green route"
+  );
 
-  visualizeRoutesOnMap(positions, fastestRoute, dfsRoute); // Visualize both routes
+  visualizeRoutesOnMap(positions, fastestRoute, dfsRoute, bfsRoute); // Visualize both routes
 }
 
 function createRandomGraph(nodeCount) {
@@ -247,7 +278,36 @@ function dfs(graph, startNode, endNode) {
   return visited;
 }
 
-function visualizeRoutesOnMap(positions, fastestRoute, dfsRoute) {
+// BFS Algorithm
+function bfs(graph, startNode, endNode) {
+  const queue = [startNode];
+  const visited = {};
+  const cameFrom = {};
+
+  visited[startNode] = true;
+  queue.push(startNode);
+
+  while (queue.length !== 0) {
+    const currentNode = queue.shift();
+
+    if (currentNode === endNode) {
+      return reconstructPath(startNode, endNode, cameFrom);
+    }
+
+    for (const edge of graph[currentNode] || []) {
+      const neighbor = edge.target;
+      if (!visited[neighbor]) {
+        visited[neighbor] = true;
+        queue.push(neighbor);
+        cameFrom[neighbor] = currentNode;
+      }
+    }
+  }
+
+  return null;
+}
+
+function visualizeRoutesOnMap(positions, fastestRoute, dfsRoute, bfsRoute) {
   polylines.forEach((polyline) => map.removeLayer(polyline));
   polylines = [];
 
@@ -277,6 +337,20 @@ function visualizeRoutesOnMap(positions, fastestRoute, dfsRoute) {
         [end.lat, end.lng],
       ];
       const polyline = L.polyline(latlngs, { color: "red" }).addTo(map);
+      polylines.push(polyline);
+    }
+  }
+
+  // Plot BFS green
+  if (bfsRoute) {
+    for (let i = 0; i < bfsRoute.length - 1; i++) {
+      const start = positions[bfsRoute[i]];
+      const end = positions[bfsRoute[i + 1]];
+      const latlngs = [
+        [start.lat, start.lng],
+        [end.lat, end.lng],
+      ];
+      const polyline = L.polyline(latlngs, { color: "green" }).addTo(map);
       polylines.push(polyline);
     }
   }
