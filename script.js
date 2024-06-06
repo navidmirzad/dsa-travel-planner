@@ -69,7 +69,7 @@ function generateGraph() {
   const dfsStartTime = performance.now();
   const dfsRoute = dfs(graph, startNode, endNode);
   const dfsEndTime = performance.now();
-  const dfsTotalTime = dfsEndTime - dfsStartTime
+  const dfsTotalTime = dfsEndTime - dfsStartTime;
   console.log(
     "DFS ",
     dfsRoute,
@@ -99,31 +99,56 @@ function generateGraph() {
     "total Distance:",
     calculateTotalDistance(graph, djikstraRoute),
     "Purple route"
-  )
+  );
 
-  
-  displayRouteText('BFS', bfsRoute, calculateTotalDistance(graph, bfsRoute), bfsTotalTime);
-  displayRouteText('DFS', dfsRoute, calculateTotalDistance(graph, dfsRoute), dfsTotalTime);
-  displayRouteText('A*', fastestRoute, calculateTotalDistance(graph, fastestRoute), aStarTotalTime);
-  displayRouteText('Dijkstra', djikstraRoute, calculateTotalDistance(graph, djikstraRoute), dijkstraTotalTime);
+  displayRouteText(
+    "BFS",
+    bfsRoute,
+    calculateTotalDistance(graph, bfsRoute),
+    bfsTotalTime
+  );
+  displayRouteText(
+    "DFS",
+    dfsRoute,
+    calculateTotalDistance(graph, dfsRoute),
+    dfsTotalTime
+  );
+  displayRouteText(
+    "A*",
+    fastestRoute,
+    calculateTotalDistance(graph, fastestRoute),
+    aStarTotalTime
+  );
+  displayRouteText(
+    "Dijkstra",
+    djikstraRoute,
+    calculateTotalDistance(graph, djikstraRoute),
+    dijkstraTotalTime
+  );
 
   //visualizeRoutesOnMap(positions, fastestRoute, dfsRoute, bfsRoute); // Visualize both routes
 
   const checkboxes = document.querySelectorAll('input[type="checkbox"]');
-      checkboxes.forEach(checkbox => {
-        checkbox.addEventListener('change', () => {
-          visualizeRoutesOnMap(positions, fastestRoute, dfsRoute, bfsRoute, djikstraRoute);
-        });
+  checkboxes.forEach((checkbox) => {
+    checkbox.addEventListener("change", () => {
+      visualizeRoutesOnMap(
+        positions,
+        fastestRoute,
+        dfsRoute,
+        bfsRoute,
+        djikstraRoute
+      );
+    });
   });
 }
 
 function displayRouteText(algorithm, path, distanceTraveled, algorithmTime) {
-  const graphOutput = document.getElementById('graphOutput');
+  const graphOutput = document.getElementById("graphOutput");
 
-  const p = document.createElement('p');
+  const p = document.createElement("p");
   p.textContent = `${algorithm} took path: ${path} with a total distance of ${distanceTraveled}, algorithm time was: ${algorithmTime}`;
 
-  graphOutput.appendChild(p)
+  graphOutput.appendChild(p);
 }
 
 function createRandomGraph(nodeCount) {
@@ -163,22 +188,21 @@ function displayGraph(graph) {
     graphOutput.appendChild(nodeElement);
   }
 
-  const algorithms = ['BFS', 'DFS', 'A*', 'Dijkstra'];
+  const algorithms = ["BFS", "DFS", "A*", "Dijkstra"];
 
-  algorithms.forEach(algorithm => {
-    const checkbox = document.createElement('input')
-    checkbox.type = 'checkbox';
+  algorithms.forEach((algorithm) => {
+    const checkbox = document.createElement("input");
+    checkbox.type = "checkbox";
     checkbox.id = algorithm;
     checkbox.name = algorithm;
 
-    const label = document.createElement('label');
+    const label = document.createElement("label");
     label.htmlFor = algorithm;
     label.innerText = algorithm;
 
     graphOutput.appendChild(checkbox);
     graphOutput.append(label);
-
-  })
+  });
 }
 
 function visualizeGraphOnMap(graph, startNode, endNode, positions) {
@@ -358,8 +382,11 @@ function bfs(graph, startNode, endNode) {
       const neighbor = edge.target;
       if (!visited[neighbor]) {
         visited[neighbor] = true;
-        queue.push(neighbor);
         cameFrom[neighbor] = currentNode;
+        if (neighbor === endNode) {
+          reconstructPath(startNode, endNode, cameFrom);
+        }
+        queue.push(neighbor);
       }
     }
   }
@@ -367,7 +394,7 @@ function bfs(graph, startNode, endNode) {
   return null;
 }
 
-function Djikstra (graph, startNode, endNode){
+function Djikstra(graph, startNode, endNode) {
   const distanceFromStart = {};
   const cameFrom = {}; // To keep track of previous node
   const priorityQueue = new PriorityQueue();
@@ -400,12 +427,18 @@ function Djikstra (graph, startNode, endNode){
   return null;
 }
 
-function visualizeRoutesOnMap(positions, fastestRoute, dfsRoute, bfsRoute, djikstraRoute) {
+function visualizeRoutesOnMap(
+  positions,
+  fastestRoute,
+  dfsRoute,
+  bfsRoute,
+  djikstraRoute
+) {
   polylines.forEach((polyline) => map.removeLayer(polyline));
   polylines = [];
 
   // Plot A* route in blue
-  if (document.getElementById('A*').checked && fastestRoute) {
+  if (document.getElementById("A*").checked && fastestRoute) {
     for (let i = 0; i < fastestRoute.length - 1; i++) {
       const start = positions[fastestRoute[i]];
       const end = positions[fastestRoute[i + 1]];
@@ -421,7 +454,7 @@ function visualizeRoutesOnMap(positions, fastestRoute, dfsRoute, bfsRoute, djiks
   }
 
   // Plot DFS red
-  if (document.getElementById('DFS').checked && dfsRoute) {
+  if (document.getElementById("DFS").checked && dfsRoute) {
     for (let i = 0; i < dfsRoute.length - 1; i++) {
       const start = positions[dfsRoute[i]];
       const end = positions[dfsRoute[i + 1]];
@@ -435,7 +468,7 @@ function visualizeRoutesOnMap(positions, fastestRoute, dfsRoute, bfsRoute, djiks
   }
 
   // Plot BFS green
-  if (document.getElementById('BFS').checked && bfsRoute) {
+  if (document.getElementById("BFS").checked && bfsRoute) {
     for (let i = 0; i < bfsRoute.length - 1; i++) {
       const start = positions[bfsRoute[i]];
       const end = positions[bfsRoute[i + 1]];
@@ -448,7 +481,7 @@ function visualizeRoutesOnMap(positions, fastestRoute, dfsRoute, bfsRoute, djiks
     }
   }
 
-  if (document.getElementById('Dijkstra').checked && djikstraRoute){
+  if (document.getElementById("Dijkstra").checked && djikstraRoute) {
     for (let i = 0; i < djikstraRoute.length - 1; i++) {
       const start = positions[djikstraRoute[i]];
       const end = positions[djikstraRoute[i + 1]];

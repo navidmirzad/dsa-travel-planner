@@ -80,15 +80,14 @@ function searchBarsNearby() {
       const startLocation = results[0].geometry.location;
       const request = {
         location: startLocation,
-        radius: 5000, // Search radius in meters (adjust as needed)
-        type: "bar", // Specify the type of place you're searching for
+        radius: 5000, // Search radius in meters
+        type: "bar",
       };
 
       const service = new google.maps.places.PlacesService(map);
 
       service.nearbySearch(request, (results, status) => {
         if (status === google.maps.places.PlacesServiceStatus.OK) {
-          // Extract coordinates of nearby bars
           const barCoordinates = results
             .slice(0, MAX_NODES - 1)
             .map((place) => place.geometry.location);
@@ -100,7 +99,7 @@ function searchBarsNearby() {
           geocodeCoordinates(barCoordinates);
 
           // Add the bar coordinates as nodes to the graph
-          barCoordinates.forEach((coordinate, index) => {
+          barCoordinates.forEach((index) => {
             graph.addNode(index);
           });
 
@@ -187,7 +186,6 @@ function findShortestTour(startNode, endNode, graph) {
   const nodes = graph.nodes;
   const n = nodes.length;
   const visited = new Array(n).fill(false);
-  const path = [];
   let shortestPath = null;
   let shortestDistance = Infinity;
 
